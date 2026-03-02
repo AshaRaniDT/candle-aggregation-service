@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: candle-aggregation-service
+
+candle:
+  symbols:
+    - BTC-USD
+    - ETH-USD
+  intervals:
+    - 1s
+    - 5s
+    - 1m
+    - 15m
+    - 1h
+  simulator:
+    enabled: true
+    events-per-second: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.candle: DEBUG
