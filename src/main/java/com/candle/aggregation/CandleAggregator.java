@@ -27,10 +27,12 @@ public class CandleAggregator {
 	}
 
 	public void process(BidAskEvent event) {
+
 		double price = (event.bid() + event.ask()) / 2.0;
 		long epochSeconds = event.timestamp() / 1000;
 
 		for (String interval : intervals) {
+
 			long intervalSeconds = parseInterval(interval);
 			long bucketStart = alignToBucket(epochSeconds, intervalSeconds);
 
@@ -38,21 +40,23 @@ public class CandleAggregator {
 
 			activeCandles.compute(key, (k, existing) -> {
 
-				// No active candle yet
+				Candle next;
+
 				if (existing == null) {
-					return newCandle(bucketStart, price);
+					next = newCandle(bucketStart, price);
+				}
+				else if (existing.time() == bucketStart) {
+					next = updateCandle(existing, price);
+				}
+				else {
+					// Bucket changed, persist old
+					store.save(event.symbol(), interval, existing);
+					next = newCandle(bucketStart, price);
 				}
 
-				// Same bucket → update only
-				if (existing.time() == bucketStart) {
-					return updateCandle(existing, price);
-				}
+				store.save(event.symbol(), interval, next);
 
-				// Bucket rollover → persist old candle
-				store.save(event.symbol(), interval, existing);
-
-				// return new candle
-				return newCandle(bucketStart, price);
+				return next;
 			});
 		}
 	}
